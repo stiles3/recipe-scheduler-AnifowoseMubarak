@@ -16,8 +16,8 @@ describe("EventSchema validation", () => {
   it("should reject invalid event data", () => {
     const invalidEvent = {
       userId: "user123",
-      title: "", // empty title
-      eventTime: "invalid-date", // invalid date format
+      title: "",
+      eventTime: "invalid-date",
     };
 
     expect(() => EventSchema.parse(invalidEvent)).toThrow();

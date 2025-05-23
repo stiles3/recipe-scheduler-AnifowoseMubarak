@@ -2,6 +2,16 @@
 
 This is a scheduling application designed to manage and send recipe reminders. The project is containerized using Docker for easy setup and deployment.
 
+This setup ensures that reminder notifications are processed reliably and at the correct scheduled time.
+
+## Queueing System: Redis + BullMQ
+
+We use **Redis** and **BullMQ** for managing background jobs and scheduling reminders.
+
+### Why Redis + BullMQ?
+I used Redis + BullMQ becuase of ease of use, familiarity, relaibility and it is docker friendly. It fits well with Nodejs 
+
+
 ## Getting Started
 
 Follow the instructions below to clone the repository, set up the environment, and start the application.
