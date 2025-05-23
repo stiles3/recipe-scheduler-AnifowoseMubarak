@@ -1,4 +1,3 @@
-// src/scripts/createTable.ts
 import { DynamoDBClient, CreateTableCommand } from "@aws-sdk/client-dynamodb";
 
 const client = new DynamoDBClient({
@@ -10,7 +9,8 @@ const client = new DynamoDBClient({
   },
 });
 
-export async function createTables() {
+async function createTables() {
+  console.log("creating tables----");
   try {
     // Create CookingEvents table
     await client.send(
@@ -49,9 +49,9 @@ export async function createTables() {
     );
 
     console.log("Tables created successfully");
-    return true;
   } catch (error) {
-    console.error("Error creating tables:", error);
-    throw error;
+    console.log("Error creating tables:", error);
   }
 }
+
+createTables();
