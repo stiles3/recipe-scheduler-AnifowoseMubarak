@@ -1,16 +1,13 @@
-// queue.service.test.ts
 import { QueueService } from "./service.queue";
 import { Event } from "../event/model.event";
 
-// Create a mock implementation of the Queue class
 const mockQueue = {
   add: jest.fn(),
   getJobs: jest.fn(),
   close: jest.fn(),
-  // Add other Queue methods if needed
+  getJob: jest.fn(),
 };
 
-// Properly type the mock
 jest.mock("bullmq", () => ({
   ...jest.requireActual("bullmq"),
   Queue: jest.fn().mockImplementation(() => mockQueue),
@@ -30,37 +27,64 @@ describe("QueueService", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     queueService = new QueueService();
-  });
-
-  it("should schedule a reminder", async () => {
-    // Setup mock implementations
     mockQueue.add.mockResolvedValue({});
     mockQueue.getJobs.mockResolvedValue([]);
-
-    await queueService.scheduleReminder(mockEvent);
-
-    expect(mockQueue.add).toHaveBeenCalledWith(
-      "reminder",
-      { event: mockEvent },
-      expect.objectContaining({
-        jobId: `event-${mockEvent.id}`,
-      })
-    );
   });
 
-  it("should remove existing job before scheduling new one", async () => {
-    const mockJob = {
-      remove: jest.fn().mockResolvedValue(undefined),
-      data: { event: { id: mockEvent.id } },
-    };
+  describe("scheduleReminder", () => {
+    it("should schedule a reminder", async () => {
+      await queueService.scheduleReminder(mockEvent);
 
-    // Setup mock implementations
-    mockQueue.add.mockResolvedValue({});
-    mockQueue.getJobs.mockResolvedValue([mockJob]);
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        "reminder",
+        { event: mockEvent },
+        expect.objectContaining({
+          jobId: `event-${mockEvent.id}`,
+          delay: expect.any(Number),
+        })
+      );
+    });
 
-    await queueService.scheduleReminder(mockEvent);
+    it("should remove existing job before scheduling new one", async () => {
+      const mockJob = {
+        remove: jest.fn().mockResolvedValue(undefined),
+        data: { event: { id: mockEvent.id } },
+      };
+      mockQueue.getJobs.mockResolvedValue([mockJob]);
 
-    expect(mockJob.remove).toHaveBeenCalled();
-    expect(mockQueue.add).toHaveBeenCalled();
+      await queueService.scheduleReminder(mockEvent);
+
+      expect(mockJob.remove).toHaveBeenCalled();
+      expect(mockQueue.add).toHaveBeenCalled();
+    });
+
+    it("should handle queue add failure", async () => {
+      mockQueue.add.mockRejectedValue(new Error("Queue error"));
+
+      await expect(queueService.scheduleReminder(mockEvent)).rejects.toThrow(
+        "Queue error"
+      );
+    });
+
+    it("should calculate correct delay time", async () => {
+      const now = new Date();
+      const eventTime = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
+      const eventWithTime = {
+        ...mockEvent,
+        eventTime: eventTime.toISOString(),
+        reminderMinutes: 15, // 15 minutes before
+      };
+
+      await queueService.scheduleReminder(eventWithTime);
+
+      const expectedDelay = 45 * 60 * 1000; // 45 minutes in ms (60 - 15)
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.objectContaining({
+          delay: expect.closeTo(expectedDelay, 1000), // Allow 1 second variance
+        })
+      );
+    });
   });
 });

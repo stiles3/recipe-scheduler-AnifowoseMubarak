@@ -36,16 +36,24 @@ export class EventService {
     return event;
   }
 
-  async getUpcomingEvents(userId: string): Promise<Event[]> {
-    const command = new ScanCommand({
+  async getEvents(
+    userId: string,
+    upcomingOnly: boolean = true
+  ): Promise<Event[]> {
+    const params: any = {
       TableName: this.tableName,
-      FilterExpression: "userId = :userId AND eventTime > :now",
+      FilterExpression: "userId = :userId",
       ExpressionAttributeValues: {
         ":userId": userId,
-        ":now": new Date().toISOString(),
       },
-    });
+    };
 
+    if (upcomingOnly) {
+      params.FilterExpression += " AND eventTime > :now";
+      params.ExpressionAttributeValues[":now"] = new Date().toISOString();
+    }
+
+    const command = new ScanCommand(params);
     const result = await docClient.send(command);
     return (result.Items as Event[]) || [];
   }

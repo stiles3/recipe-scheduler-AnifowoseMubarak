@@ -2,7 +2,7 @@ import { DynamoDBClient, CreateTableCommand } from "@aws-sdk/client-dynamodb";
 
 const client = new DynamoDBClient({
   region: "us-east-1",
-  endpoint: "http://dynamodb:8000",
+  endpoint: "http://localhost:8000",
   credentials: {
     accessKeyId: "fakeMyKeyId",
     secretAccessKey: "fakeSecretAccessKey",

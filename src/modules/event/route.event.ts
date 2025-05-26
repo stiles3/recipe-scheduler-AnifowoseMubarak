@@ -18,14 +18,18 @@ router.post("/events", async (req, res) => {
     }
   }
 });
-// @ts-ignore
+
+//@ts-ignore
 router.get("/events", async (req, res) => {
   try {
     const userId = req.query.userId as string;
+    console.log(req.query.upcomingOnly);
+    const upcomingOnly = req.query.upcomingOnly !== "false";
     if (!userId) {
       return res.status(400).json({ error: "userId is required" });
     }
-    const events = await eventService.getUpcomingEvents(userId);
+
+    const events = await eventService.getEvents(userId, upcomingOnly);
     res.json(events);
   } catch (error: unknown) {
     if (error instanceof Error) {

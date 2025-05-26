@@ -1,11 +1,9 @@
-// worker.integration.test.ts
 import { NotificationService } from "../modules/notification/service.notification";
-import { Worker } from "bullmq";
 import { Event } from "../modules/event/model.event";
 
-jest.mock("./service.notification");
+jest.mock("../modules/notification/service.notification");
 
-describe("Worker", () => {
+describe("Worker Integration Tests", () => {
   const mockEvent: Event = {
     id: "event123",
     userId: "user123",
@@ -16,26 +14,37 @@ describe("Worker", () => {
   };
 
   let notificationService: jest.Mocked<NotificationService>;
-  let worker: Worker;
 
   beforeEach(() => {
     jest.clearAllMocks();
     notificationService =
       new NotificationService() as jest.Mocked<NotificationService>;
-    notificationService.sendReminder.mockResolvedValue(undefined);
   });
 
   it("should process a reminder job successfully", async () => {
-    // Simulate worker processing a job
+    notificationService.sendReminder.mockResolvedValue(undefined);
+
     const processFn = require("./worker").worker.process;
     await processFn({
-      data: { event: mockEvent },
+      data: { event: mockEvent, deviceToken: "valid-token" },
     });
 
-    expect(notificationService.sendReminder).toHaveBeenCalledWith(mockEvent);
+    expect(notificationService.sendReminder).toHaveBeenCalledWith(
+      mockEvent,
+      "valid-token"
+    );
   });
 
-  it("should handle job failure", async () => {
+  it("should handle missing device token", async () => {
+    const processFn = require("./worker").worker.process;
+    await expect(
+      processFn({
+        data: { event: mockEvent }, // No device token
+      })
+    ).rejects.toThrow("No device token provided");
+  });
+
+  it("should handle notification failure", async () => {
     notificationService.sendReminder.mockRejectedValue(
       new Error("Failed to send")
     );
@@ -43,7 +52,7 @@ describe("Worker", () => {
     const processFn = require("./worker").worker.process;
     await expect(
       processFn({
-        data: { event: mockEvent },
+        data: { event: mockEvent, deviceToken: "valid-token" },
       })
     ).rejects.toThrow("Failed to send");
   });
