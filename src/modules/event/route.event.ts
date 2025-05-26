@@ -5,9 +5,16 @@ import { EventSchema } from "./model.event";
 const router = express.Router();
 const eventService = new EventService();
 
+//@ts-ignore
 router.post("/events", async (req, res) => {
   try {
     const validatedData = EventSchema.parse(req.body);
+    const eventTime = new Date(validatedData.eventTime);
+    if (eventTime < new Date()) {
+      return res
+        .status(400)
+        .json({ error: "Event time must be in the future" });
+    }
     const event = await eventService.createEvent(validatedData);
     res.status(201).json(event);
   } catch (error: unknown) {
