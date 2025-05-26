@@ -40,11 +40,10 @@ Use Docker Compose to start the application in detached mode:
 ```bash
 docker compose up -d
 ```
-4. Troubleshooting: Table Creation
-If you encounter issues with table creation, run the following command to force table creation:
-
+4. Run Table Creation script
+To create the tables, run the following npm script
 ```bash
-docker compose -f 'docker-compose.yml' up -d --build 'create-tables'
+npm run create-tables
 ```
 
 Accessing the Application
