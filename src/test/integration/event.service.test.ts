@@ -31,7 +31,7 @@ describe("EventService Integration Tests", () => {
     expect(createdEvent.title).toBe(eventData.title);
 
     // Retrieve events
-    const { data: events } = await eventService.getEvents(testUserId);
+    const events = await eventService.getEvents(testUserId);
     expect(events.length).toBe(1);
     expect(events[0].id).toBe(createdEvent.id);
   });
@@ -51,7 +51,7 @@ describe("EventService Integration Tests", () => {
 
     expect(updatedEvent.title).toBe("Updated Title");
 
-    const { data: events } = await eventService.getEvents(testUserId);
+    const events = await eventService.getEvents(testUserId);
     expect(events[0].title).toBe("Updated Title");
   });
 
@@ -66,7 +66,7 @@ describe("EventService Integration Tests", () => {
     const createdEvent = await eventService.createEvent(eventData);
     await eventService.deleteEvent(createdEvent.id);
 
-    const { data: events } = await eventService.getEvents(testUserId);
+    const events = await eventService.getEvents(testUserId);
     expect(events.length).toBe(0);
   });
 
@@ -90,11 +90,11 @@ describe("EventService Integration Tests", () => {
 
     // Get all events
     const allEvents = await eventService.getEvents(testUserId, false);
-    expect(allEvents.data.length).toBe(2);
+    expect(allEvents.length).toBe(2);
 
     // Get only upcoming events
     const upcomingEvents = await eventService.getEvents(testUserId, true);
-    expect(upcomingEvents.data.length).toBe(1);
-    expect(upcomingEvents.data[0].title).toBe("Future Event");
+    expect(upcomingEvents.length).toBe(1);
+    expect(upcomingEvents[0].title).toBe("Future Event");
   });
 });
