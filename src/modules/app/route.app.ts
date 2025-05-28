@@ -16,8 +16,11 @@ router.post("/devices", async (req, res) => {
     const validatedData = AppSchema.parse(req.body);
     await appService.registerDevice(validatedData.userId, validatedData.token);
     res.status(201).end();
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
+  } catch (error: unknown) {
+    if (error) {
+      //@ts-expect-error: unknown error
+      res.status(400).json({ error: error.message });
+    }
   }
 });
 

@@ -19,7 +19,7 @@ export class NotificationService {
         sound: "default",
         title: "Cooking Reminder",
         body: `Don't forget to ${event.title} at ${new Date(
-          event.eventTime
+          event.eventTime,
         ).toLocaleString()}`,
         data: { eventId: event.id },
       };

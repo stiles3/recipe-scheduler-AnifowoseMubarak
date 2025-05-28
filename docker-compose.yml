@@ -1,8 +1,37 @@
-
+version: '3.8'
 
 services:
+  dynamodb:
+    image: amazon/dynamodb-local:2.6.1
+    container_name: dynamodb
+    ports:
+      - "8000:8000"
+    command: -jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal
+    volumes:
+      - dynamodb-data:/home/dynamodblocal
+
+  setup-db:
+    build:
+      context: .
+      target: api  # Or create a specific setup-db target
+    environment:
+      - IS_LOCAL=true
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - DYNAMODB_ENDPOINT=http://dynamodb:8000
+    depends_on:
+      - dynamodb
+    command: >
+      sh -c "while ! nc -z dynamodb 8000; do sleep 2; done;
+      echo 'DynamoDB is ready!';
+      node dist/scripts/createTable.js"
+    restart: on-failure
+
   backend:
-    build: .
+    build:
+      context: .
+      target: api
     ports:
       - "3000:3000"
     environment:
@@ -14,11 +43,14 @@ services:
       - REMINDER_LEAD_MINUTES=30
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
+      - DYNAMODB_ENDPOINT=http://dynamodb:8000
     depends_on:
+      - setup-db
       - redis
-      - dynamodb
-      # - create-tables
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm start
 
   redis:
     image: redis:alpine
@@ -30,29 +62,10 @@ services:
       timeout: 2s
       retries: 5
 
-  dynamodb:
-    image: amazon/dynamodb-local:2.6.1
-    container_name: dynamodb
-    ports:
-      - "8000:8000"
-    command: -jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal
-    volumes:
-      - dynamodb-data:/home/dynamodblocal
-      
-  # create-tables:
-  #   build: .
-  #   command: npm run create-tables
-  #   environment:
-  #     - IS_LOCAL=true
-  #     - AWS_REGION=us-east-1
-  #     - AWS_ACCESS_KEY_ID=local
-  #     - AWS_SECRET_ACCESS_KEY=local
-  #     - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
-  #   restart: "no"
-
   worker:
-    build: .
-    command: npm run worker
+    build:
+      context: .
+      target: worker
     environment:
       - IS_LOCAL=true
       - AWS_REGION=us-east-1
@@ -61,11 +74,10 @@ services:
       - REMINDER_LEAD_MINUTES=30
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
+      - DYNAMODB_ENDPOINT=http://dynamodb:8000
     depends_on:
+      - setup-db
       - redis
-      - dynamodb
-      # - create-tables
 
 volumes:
   dynamodb-data:

@@ -4,7 +4,7 @@ import { Event } from "../event/model.event";
 import { NotificationService } from "../notification/service.notification";
 
 const REMINDER_LEAD_MINUTES = parseInt(
-  process.env.REMINDER_LEAD_MINUTES || "30"
+  process.env.REMINDER_LEAD_MINUTES || "30",
 );
 
 export class QueueService {
@@ -27,7 +27,7 @@ export class QueueService {
         const { event } = job.data;
         await this.notificationService.sendReminder(event);
       },
-      { connection }
+      { connection },
     );
 
     this.worker.on("failed", (job, err) => {
@@ -53,7 +53,7 @@ export class QueueService {
       {
         delay: reminderTime.getTime() - Date.now(),
         jobId: `event-${event.id}`,
-      }
+      },
     );
   }
 }

@@ -1,13 +1,14 @@
-import { DynamoDBClient, CreateTableCommand } from "@aws-sdk/client-dynamodb";
+const  { DynamoDBClient, CreateTableCommand } = require("@aws-sdk/client-dynamodb");
 
 const client = new DynamoDBClient({
   region: "us-east-1",
-  endpoint: "http://localhost:8000",
+  endpoint: "http://dynamodb:8000", // Changed from localhost to dynamodb
   credentials: {
-    accessKeyId: "fakeMyKeyId",
-    secretAccessKey: "fakeSecretAccessKey",
+    accessKeyId: "local", // Match your compose file
+    secretAccessKey: "local", // Match your compose file
   },
 });
+
 
 async function createTables() {
   console.log("creating tables----");
@@ -35,7 +36,7 @@ async function createTables() {
           },
         ],
         BillingMode: "PAY_PER_REQUEST",
-      })
+      }),
     );
 
     // Create UserDevices table
@@ -45,7 +46,7 @@ async function createTables() {
         KeySchema: [{ AttributeName: "userId", KeyType: "HASH" }],
         AttributeDefinitions: [{ AttributeName: "userId", AttributeType: "S" }],
         BillingMode: "PAY_PER_REQUEST",
-      })
+      }),
     );
 
     console.log("Tables created successfully");

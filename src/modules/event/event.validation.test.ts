@@ -41,7 +41,7 @@ describe("EventSchema validation", () => {
   });
 
   it("should set default reminderMinutes if not provided", () => {
-    const { reminderMinutes, ...eventWithoutReminder } = validEvent;
+    const { ...eventWithoutReminder } = validEvent;
     const result = EventSchema.parse(eventWithoutReminder);
     expect(result.reminderMinutes).toBe(30);
   });

@@ -5,7 +5,7 @@ import { EventSchema } from "./model.event";
 const router = express.Router();
 const eventService = new EventService();
 
-//@ts-ignore
+//@ts-expect-error: unexpected error response
 router.post("/events", async (req, res) => {
   try {
     const validatedData = EventSchema.parse(req.body);
@@ -26,7 +26,7 @@ router.post("/events", async (req, res) => {
   }
 });
 
-//@ts-ignore
+//@ts-expect-error: unexpected error response
 router.get("/events", async (req, res) => {
   try {
     const userId = req.query.userId as string;

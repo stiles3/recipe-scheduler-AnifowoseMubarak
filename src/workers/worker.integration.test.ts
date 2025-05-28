@@ -31,7 +31,7 @@ describe("Worker Integration Tests", () => {
 
     expect(notificationService.sendReminder).toHaveBeenCalledWith(
       mockEvent,
-      "valid-token"
+      "valid-token",
     );
   });
 
@@ -40,20 +40,20 @@ describe("Worker Integration Tests", () => {
     await expect(
       processFn({
         data: { event: mockEvent }, // No device token
-      })
+      }),
     ).rejects.toThrow("No device token provided");
   });
 
   it("should handle notification failure", async () => {
     notificationService.sendReminder.mockRejectedValue(
-      new Error("Failed to send")
+      new Error("Failed to send"),
     );
 
     const processFn = require("./worker").worker.process;
     await expect(
       processFn({
         data: { event: mockEvent, deviceToken: "valid-token" },
-      })
+      }),
     ).rejects.toThrow("Failed to send");
   });
 });

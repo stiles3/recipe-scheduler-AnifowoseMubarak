@@ -1,0 +1,77 @@
+name: CI Pipeline for Microservice
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Tests with Port Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check port availability
+      run: |
+        # Function to check if port is in use
+        check_port() {
+          if nc -z localhost $1; then
+            echo "Port $1 is already in use!"
+            exit 1
+          else
+            echo "Port $1 is available"
+          fi
+        }
+        
+        # Check required ports
+        check_port 3000  # Backend port
+        check_port 8000  # DynamoDB port
+        check_port 6379  # Redis port
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build application
+      run: npm run build
+
+    - name: Lint code
+      run: npm run lint
+
+    - name: Run unit tests
+      run: npm test
+
+    - name: Start Docker Compose
+      run: |
+        docker-compose up -d --build
+        
+        # Wait for backend to be ready (modify as needed)
+        echo "Waiting for services to start..."
+        sleep 10
+        
+        # Verify services are running
+        docker-compose ps
+
+    - name: Run integration tests
+      run: npm run test:docker
+      env:
+        IS_LOCAL: true
+        AWS_REGION: us-east-1
+        AWS_ACCESS_KEY_ID: local
+        AWS_SECRET_ACCESS_KEY: local
+        DYNAMODB_ENDPOINT: http://localhost:8000
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+
+    - name: Clean up
+      if: always()
+      run: docker-compose down -v

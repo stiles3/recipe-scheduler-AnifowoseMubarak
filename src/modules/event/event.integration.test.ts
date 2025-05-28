@@ -22,7 +22,7 @@ describe("Event API Integration Tests", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (EventService.prototype.createEvent as jest.Mock).mockResolvedValue(
-      mockEvent
+      mockEvent,
     );
     (EventService.prototype.getEvents as jest.Mock).mockResolvedValue([
       mockEvent,
@@ -84,7 +84,7 @@ describe("Event API Integration Tests", () => {
 
     it("should return 404 for non-existent event", async () => {
       (EventService.prototype.updateEvent as jest.Mock).mockRejectedValue(
-        new Error("Not found")
+        new Error("Not found"),
       );
       const response = await request(app)
         .patch("/events/nonexistent")
@@ -102,7 +102,7 @@ describe("Event API Integration Tests", () => {
 
     it("should return 404 for non-existent event", async () => {
       (EventService.prototype.deleteEvent as jest.Mock).mockRejectedValue(
-        new Error("Not found")
+        new Error("Not found"),
       );
       const response = await request(app).delete("/events/nonexistent");
       expect(response.status).toBe(404);

@@ -1,6 +1,5 @@
 import {
   PutCommand,
-  GetCommand,
   UpdateCommand,
   DeleteCommand,
   ScanCommand,
@@ -15,7 +14,7 @@ export class EventService {
   private queueService = new QueueService();
 
   async createEvent(
-    eventData: Omit<Event, "id" | "createdAt">
+    eventData: Omit<Event, "id" | "createdAt">,
   ): Promise<Event> {
     const event: Event = {
       id: uuidv4(),
@@ -38,9 +37,13 @@ export class EventService {
 
   async getEvents(
     userId: string,
-    upcomingOnly: boolean = true
+    upcomingOnly: boolean = true,
   ): Promise<Event[]> {
-    const params: any = {
+    const params: {
+      TableName: string;
+      FilterExpression: string;
+      ExpressionAttributeValues: Record<string, string>;
+    } = {
       TableName: this.tableName,
       FilterExpression: "userId = :userId",
       ExpressionAttributeValues: {
@@ -60,7 +63,7 @@ export class EventService {
 
   async updateEvent(id: string, updates: Partial<Event>): Promise<Event> {
     const updateExpression: string[] = [];
-    const expressionAttributeValues: Record<string, any> = {};
+    const expressionAttributeValues: Record<string, unknown> = {};
 
     Object.entries(updates).forEach(([key, value]) => {
       updateExpression.push(`${key} = :${key}`);

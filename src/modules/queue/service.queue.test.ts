@@ -41,7 +41,7 @@ describe("QueueService", () => {
         expect.objectContaining({
           jobId: `event-${mockEvent.id}`,
           delay: expect.any(Number),
-        })
+        }),
       );
     });
 
@@ -62,7 +62,7 @@ describe("QueueService", () => {
       mockQueue.add.mockRejectedValue(new Error("Queue error"));
 
       await expect(queueService.scheduleReminder(mockEvent)).rejects.toThrow(
-        "Queue error"
+        "Queue error",
       );
     });
 
@@ -83,7 +83,7 @@ describe("QueueService", () => {
         expect.anything(),
         expect.objectContaining({
           delay: expect.closeTo(expectedDelay, 1000), // Allow 1 second variance
-        })
+        }),
       );
     });
   });

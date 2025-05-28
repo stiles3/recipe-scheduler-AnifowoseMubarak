@@ -21,7 +21,7 @@ const worker = new Worker(
     } catch (error) {
       console.error(
         `Failed to process reminder for event ${job.data.event.id}:`,
-        error
+        error,
       );
       throw error; // This will make BullMQ retry the job
     }
@@ -30,7 +30,7 @@ const worker = new Worker(
     connection,
     removeOnComplete: { count: 100 }, // Keep last 100 completed jobs
     removeOnFail: { count: 100 }, // Keep last 100 failed jobs
-  }
+  },
 );
 
 worker.on("completed", (job) => {
@@ -40,7 +40,7 @@ worker.on("completed", (job) => {
 worker.on("failed", (job, err) => {
   console.error(
     `Failed to send reminder for event ${job?.data?.event?.id}:`,
-    err
+    err,
   );
 });
 
