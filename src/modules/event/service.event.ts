@@ -3,18 +3,18 @@ import {
   UpdateCommand,
   DeleteCommand,
   ScanCommand,
-} from "@aws-sdk/lib-dynamodb";
-import { v4 as uuidv4 } from "uuid";
-import { Event } from "./model.event";
-import { docClient } from "../../core/config/database";
-import { QueueService } from "../queue/service.queue";
+} from '@aws-sdk/lib-dynamodb';
+import { v4 as uuidv4 } from 'uuid';
+import { Event } from './model.event';
+import { docClient } from '../../core/config/database';
+import { QueueService } from '../queue/service.queue';
 
 export class EventService {
-  private tableName = "event";
+  private tableName = 'event';
   private queueService = new QueueService();
 
   async createEvent(
-    eventData: Omit<Event, "id" | "createdAt">
+    eventData: Omit<Event, 'id' | 'createdAt'>,
   ): Promise<Event> {
     const event: Event = {
       id: uuidv4(),
@@ -38,54 +38,27 @@ export class EventService {
   async getEvents(
     userId: string,
     upcomingOnly: boolean = true,
-    limit: number = 10,
-    exclusiveStartKey?: Record<string, any>
-  ): Promise<{
-    data: Event[];
-    meta: {
-      totalCount?: number; // Note: Getting total count requires a separate scan
-      page: number; // This is conceptual since DynamoDB uses LastEvaluatedKey
-      limit: number;
-      hasMore: boolean;
-      lastEvaluatedKey?: Record<string, any>;
-    };
-  }> {
+  ): Promise<Event[]> {
     const params: {
       TableName: string;
       FilterExpression: string;
-      ExpressionAttributeValues: Record<string, string>;
-      Limit: number;
-      ExclusiveStartKey?: Record<string, any>;
+      ExpressionAttributeValues:Record<string,string>
     } = {
       TableName: this.tableName,
       FilterExpression: "userId = :userId",
       ExpressionAttributeValues: {
         ":userId": userId,
       },
-      Limit: limit,
     };
 
-    if (exclusiveStartKey) {
-      params.ExclusiveStartKey = exclusiveStartKey;
-    }
-
     if (upcomingOnly) {
-      params.FilterExpression += " AND eventTime > :now";
-      params.ExpressionAttributeValues[":now"] = new Date().toISOString();
+      params.FilterExpression += ' AND eventTime > :now';
+      params.ExpressionAttributeValues[':now'] = new Date().toISOString();
     }
 
     const command = new ScanCommand(params);
     const result = await docClient.send(command);
-
-    return {
-      data: (result.Items as Event[]) || [],
-      meta: {
-        limit,
-        hasMore: !!result.LastEvaluatedKey,
-        lastEvaluatedKey: result.LastEvaluatedKey,
-        page: 0,
-      },
-    };
+    return (result.Items as Event[]) || [];
   }
 
   async updateEvent(id: string, updates: Partial<Event>): Promise<Event> {
@@ -100,9 +73,9 @@ export class EventService {
     const command = new UpdateCommand({
       TableName: this.tableName,
       Key: { id },
-      UpdateExpression: `SET ${updateExpression.join(", ")}`,
+      UpdateExpression: `SET ${updateExpression.join(', ')}`,
       ExpressionAttributeValues: expressionAttributeValues,
-      ReturnValues: "ALL_NEW",
+      ReturnValues: 'ALL_NEW',
     });
 
     const result = await docClient.send(command);

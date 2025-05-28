@@ -41,7 +41,7 @@ describe("Event API Integration Tests", () => {
     // Setup mock implementations
     eventService.createEvent.mockResolvedValue(mockEvent);
 
-    //@ts-expect-error: dynamic data
+    
     eventService.getEvents.mockResolvedValue([mockEvent]);
     eventService.updateEvent.mockResolvedValue({
       ...mockEvent,

@@ -30,35 +30,15 @@ router.post("/events", async (req, res) => {
 router.get("/events", async (req, res) => {
   try {
     const userId = req.query.userId as string;
+    console.log(req.query.upcomingOnly);
     const upcomingOnly = req.query.upcomingOnly !== "false";
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
-    const lastEvaluatedKey = req.query.lastEvaluatedKey
-      ? JSON.parse(req.query.lastEvaluatedKey as string)
-      : undefined;
-
     if (!userId) {
       return res.status(400).json({ error: "userId is required" });
     }
 
-    if (isNaN(limit) || limit <= 0) {
-      return res.status(400).json({ error: "limit must be a positive number" });
-    }
-
-    const { data, meta } = await eventService.getEvents(
-      userId,
-      upcomingOnly,
-      limit,
-      lastEvaluatedKey
-    );
-
-    res.json({
-      data,
-      meta,
-    });
+    const events = await eventService.getEvents(userId, upcomingOnly);
+    res.json(events);
   } catch (error: unknown) {
-    if (error instanceof SyntaxError) {
-      return res.status(400).json({ error: "Invalid lastEvaluatedKey format" });
-    }
     if (error instanceof Error) {
       res.status(400).json({ error: error.message });
     } else {
