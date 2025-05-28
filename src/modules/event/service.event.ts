@@ -14,7 +14,7 @@ export class EventService {
   private queueService = new QueueService();
 
   async createEvent(
-    eventData: Omit<Event, "id" | "createdAt">,
+    eventData: Omit<Event, "id" | "createdAt">
   ): Promise<Event> {
     const event: Event = {
       id: uuidv4(),
@@ -38,18 +38,36 @@ export class EventService {
   async getEvents(
     userId: string,
     upcomingOnly: boolean = true,
-  ): Promise<Event[]> {
+    limit: number = 10,
+    exclusiveStartKey?: Record<string, any>
+  ): Promise<{
+    data: Event[];
+    meta: {
+      totalCount?: number; // Note: Getting total count requires a separate scan
+      page: number; // This is conceptual since DynamoDB uses LastEvaluatedKey
+      limit: number;
+      hasMore: boolean;
+      lastEvaluatedKey?: Record<string, any>;
+    };
+  }> {
     const params: {
       TableName: string;
       FilterExpression: string;
       ExpressionAttributeValues: Record<string, string>;
+      Limit: number;
+      ExclusiveStartKey?: Record<string, any>;
     } = {
       TableName: this.tableName,
       FilterExpression: "userId = :userId",
       ExpressionAttributeValues: {
         ":userId": userId,
       },
+      Limit: limit,
     };
+
+    if (exclusiveStartKey) {
+      params.ExclusiveStartKey = exclusiveStartKey;
+    }
 
     if (upcomingOnly) {
       params.FilterExpression += " AND eventTime > :now";
@@ -58,7 +76,16 @@ export class EventService {
 
     const command = new ScanCommand(params);
     const result = await docClient.send(command);
-    return (result.Items as Event[]) || [];
+
+    return {
+      data: (result.Items as Event[]) || [],
+      meta: {
+        limit,
+        hasMore: !!result.LastEvaluatedKey,
+        lastEvaluatedKey: result.LastEvaluatedKey,
+        page: 0,
+      },
+    };
   }
 
   async updateEvent(id: string, updates: Partial<Event>): Promise<Event> {

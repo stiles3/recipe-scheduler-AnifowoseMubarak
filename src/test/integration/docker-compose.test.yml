@@ -1,0 +1,46 @@
+
+
+services:
+  dynamodb:
+    image: amazon/dynamodb-local:2.6.1
+    container_name: dynamodb-test
+    ports:
+      - "8001:8000"  # Different port to avoid conflicts
+    command: -jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal
+    volumes:
+      - dynamodb-test-data:/home/dynamodblocal
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6380:6379"  # Different port
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+
+  test-runner:
+    build:
+      context: ../../../
+      dockerfile: Dockerfile.test
+      target: api
+    environment:
+      - NODE_ENV=test
+      - IS_LOCAL=true
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - DYNAMODB_ENDPOINT=http://dynamodb-test:8000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - dynamodb
+      - redis
+  # Remove or modify the volume mounts
+    volumes:
+      - ./jest.config.js:/app/jest.config.js  # Only mount specific files if needed
+    command: sh -c "npm run test:integration"
+
+volumes:
+  dynamodb-test-data:

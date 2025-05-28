@@ -1,3 +1,7 @@
+
+import { clearTables } from "./utils/dynamodb";
+import { clearRedis } from "./utils/redis";
+
 const {
   DynamoDBClient,
   CreateTableCommand,
@@ -57,4 +61,9 @@ async function createTables() {
   }
 }
 
-createTables();
+module.exports = async () => {
+  // Global setup for tests
+  await clearTables();
+  await clearRedis();
+  await createTables();
+};

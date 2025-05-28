@@ -1,0 +1,102 @@
+
+
+services:
+  dynamodb:
+    image: amazon/dynamodb-local:2.6.1
+    container_name: dynamodb-e2e
+    ports:
+      - "8002:8000"
+    command: -jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal
+    volumes:
+      - dynamodb-e2e-data:/home/dynamodblocal
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6381:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+
+  setup-db:
+    build:
+      context: ..
+      target: setup-db
+    environment:
+      - IS_LOCAL=true
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - DYNAMODB_ENDPOINT=http://dynamodb-e2e:8000
+    depends_on:
+      - dynamodb-e2e
+    command: >
+      sh -c "while ! nc -z dynamodb-e2e 8000; do sleep 2; done;
+      echo 'DynamoDB is ready!';
+      node dist/scripts/createTable.js"
+
+  backend:
+    build:
+      context: ..
+      target: api
+    ports:
+      - "3001:3000"  # Different port
+    environment:
+      - PORT=3000
+      - IS_LOCAL=true
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - REMINDER_LEAD_MINUTES=30
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DYNAMODB_ENDPOINT=http://dynamodb-e2e:8000
+    depends_on:
+      - setup-db
+      - redis
+
+  worker:
+    build:
+      context: ..
+      target: worker
+    environment:
+      - IS_LOCAL=true
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - REMINDER_LEAD_MINUTES=30
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DYNAMODB_ENDPOINT=http://dynamodb-e2e:8000
+    depends_on:
+      - setup-db
+      - redis
+
+  test-runner:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: api
+    environment:
+      - NODE_ENV=test
+      - IS_LOCAL=true
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - DYNAMODB_ENDPOINT=http://dynamodb-e2e:8000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - API_URL=http://backend:3000
+    depends_on:
+      - backend
+      - worker
+    volumes:
+      - ../:/app
+      - /app/node_modules
+    command: sh -c "while ! nc -z backend 3000; do sleep 2; done;
+                   npm run test:e2e"
+
+volumes:
+  dynamodb-e2e-data:

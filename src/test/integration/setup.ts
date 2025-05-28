@@ -1,19 +1,17 @@
-const {
-  DynamoDBClient,
-  CreateTableCommand,
-} = require("@aws-sdk/client-dynamodb");
+import { DynamoDBClient, CreateTableCommand } from "@aws-sdk/client-dynamodb";
 
-const client = new DynamoDBClient({
-  region: "us-east-1",
-  endpoint: "http://dynamodb:8000", // Changed from localhost to dynamodb
-  credentials: {
-    accessKeyId: "local", // Match your compose file
-    secretAccessKey: "local", // Match your compose file
-  },
-});
+export default async function () {
+  // Connect to your existing DynamoDB container
+  const client = new DynamoDBClient({
+    region: "us-east-1",
+    endpoint: "http://dynamodb-test:8000", // Use your compose service name
+    credentials: {
+      accessKeyId: "local",
+      secretAccessKey: "local",
+    },
+  });
 
-async function createTables() {
-  console.log("creating tables----");
+  console.log("Creating tables...");
   try {
     // Create CookingEvents table
     await client.send(
@@ -53,8 +51,7 @@ async function createTables() {
 
     console.log("Tables created successfully");
   } catch (error) {
-    console.log("Error creating tables:", error);
+    console.error("Error creating tables:", error);
+    throw error;
   }
 }
-
-createTables();

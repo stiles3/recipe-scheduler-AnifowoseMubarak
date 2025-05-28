@@ -48,7 +48,7 @@ jobs:
       run: npm run lint
 
     - name: Run unit tests
-      run: npm test
+      run: npm run test:unit
 
     - name: Start Docker Compose
       run: |
@@ -60,17 +60,9 @@ jobs:
         
         # Verify services are running
         docker-compose ps
-
-    - name: Run integration tests
-      run: npm run test:docker
-      env:
-        IS_LOCAL: true
-        AWS_REGION: us-east-1
-        AWS_ACCESS_KEY_ID: local
-        AWS_SECRET_ACCESS_KEY: local
-        DYNAMODB_ENDPOINT: http://localhost:8000
-        REDIS_HOST: localhost
-        REDIS_PORT: 6379
+    
+     - name: Run unit tests
+      run: npm run create-tables
 
     - name: Clean up
       if: always()

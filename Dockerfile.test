@@ -1,0 +1,28 @@
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+FROM node:18-alpine AS api
+WORKDIR /app
+# Copy package files and dependencies
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copy built files and source files (including type declarations)
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src ./src
+
+# Copy test files and configs
+COPY --from=builder /app/src/test ./tests
+COPY --from=builder /app/jest*.config.js ./
+COPY --from=builder /app/tsconfig*.json ./
+
+# Install test dependencies
+RUN npm install --save-dev jest supertest @types/jest
+
+CMD ["sh", "-c", "while ! nc -z dynamodb-test 8000; do sleep 2; done; \
+                while ! nc -z redis 6379; do sleep 2; done; \
+                npm run test:integration"]
